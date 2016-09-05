@@ -1,5 +1,6 @@
 import math
 import operator
+import itertools
 
 cache = dict()
 cache2 = dict()
@@ -64,10 +65,40 @@ class Tree:
             else:
                 n.sets = n.left.sets * n.right.sets * joint(n.left.population, n.right.population)
 
+    def ancestor(self, a, b):
+        n = self.root
+        while True:
+            if n.key == a:
+                break
+            elif a < n.key:
+                n = n.left
+            else:
+                n = n.right
+        result = False
+        while True:
+            if n == None:
+                break
+            elif n.key == b:
+                result = True
+                break
+            elif b < n.key:
+                n = n.left
+            else:
+                n = n.right
+        return result
+
+    def satisfy(self, query):
+        for i in range(0, len(query)):
+            for j in range(0, i):
+                if self.ancestor(query[i], query[j]):
+                    return False
+        return True
 
     def rootSets(self):
         """returns number of possible sets under root node"""
         return self.root.sets 
+
+
 
 def crowd(a, b):
     """ stirling number of the second kind
@@ -88,6 +119,8 @@ def crowd(a, b):
     cache[n, k] = result
     return result
 
+def crowd(a, b):
+    return combination(a - 1, b - 1)
 
 def combination(n, r):
     """ combination number with cache for performance boost
@@ -128,6 +161,19 @@ def answer(seq):
 
     bunnies.bottomup()
 
+    perms = itertools.permutations(seq, len(seq))
+
+    perms = list(perms)
+
+    count = 0
+
+    for l in perms:
+        if bunnies.satisfy(l):
+            print l
+            count += 1
+
+    print count
+    print joint(3,3)
     return str(bunnies.rootSets())
 
-print answer([5,4,6,3])
+print answer([5,7,8,2,4,6,1])
