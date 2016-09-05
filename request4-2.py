@@ -1,4 +1,9 @@
 import math
+import operator
+
+cache = dict()
+cache2 = dict()
+cache3 = dict()
 
 class Node:
     def __init__(self):
@@ -6,80 +11,123 @@ class Node:
         self.parent = None
         self.right = None
         self.left = None
+        self.population = 1 #number of nodes under itself, self-inclusive
+        self.sets = 0
 
 class Tree:
     def __init__(self):
         self.root = Node()
 
     def insert(self, key):
+        """ building the tree"""
         n = self.root
         while True:
             if n.key == None:
                 n.key = key
                 break
             elif key < n.key:
+                n.population += 1
                 if n.left == None:
                     n.left = Node()
                     n.left.parent = n
                 n = n.left
             else:
+                n.population += 1
                 if n.right == None:
                     n.right = Node()
                     n.right.parent = n
                 n = n.right
 
-    def display(self):
+    def bottomup(self):
+        """ traverse the tree with BFS in a bottomup order
+            combine and update the sets value for each node"""
         depth = 0
         visit = [self.root]
+        trip = [self.root]
         while visit:
             for i in range(0, len(visit)):
                 n = visit.pop()
                 if n.left != None:
                     visit.insert(0, n.left)
+                    trip.insert(0, n.left)
                 if n.right != None:
                     visit.insert(0, n.right)
-                print "%3d " % n.key,
-            print
+                    trip.insert(0, n.right)
             depth += 1
-
-    def ancestor(parent, child):
-        n = self.root
-        while True:
-            if parent == n.key:
-                break
-            elif parent < n.key:
-                n = n.left
+        for n in trip:
+            if (n.left == None) and (n.right == None):
+                n.sets = 1
+            elif (n.right == None):
+                n.sets = n.left.sets
+            elif (n.left == None):
+                n.sets = n.right.sets
             else:
-                n = n.right
-        yes = False
-        while n != None
-            if child == n.key:
-                yes =True
-                break
-            elif child < n.key:
-                n = n.left
-            else:
-                n = n.right
+                n.sets = n.left.sets * n.right.sets * joint(n.left.population, n.right.population)
 
-        return yes
+
+    def rootSets(self):
+        """returns number of possible sets under root node"""
+        return self.root.sets 
 
 def crowd(a, b):
-    
+    """ stirling number of the second kind
+        reference: 
+            https://en.wikipedia.org/wiki/Stirling_numbers_of_the_second_kind
+        """
+    n = max(a,b)
+    k = min(a,b)
+    if (n,k) in cache:
+        return cache[n,k]
+    result = 0
+    if n == k:
+        result = 1
+    elif (n == 0) or (k == 0):
+        result = 0
+    else:
+        result = k * crowd(n - 1, k) + crowd(n - 1, k - 1)
+    cache[n, k] = result
+    return result
+
+
+def combination(n, r):
+    """ combination number with cache for performance boost
+        """
+    if n < r: return 0
+    r = min(r, n-r)
+    if r == 0: return 1
+    if (n,r) in cache2:
+        return cache2[n,r]
+    numer = reduce(operator.mul, xrange(n, n-r, -1))
+    denom = reduce(operator.mul, xrange(1, r+1))
+    result = numer//denom
+    cache2[n,r] = result
+    return result
+
+
+def joint(a, b):
+    """ possible permutation of two sets of length a and b without
+        changing the original order of each set
+        cache for performance increase"""
+    x = max(a,b)
+    y = min(a,b)
+    if (x,y) in cache3:
+        return cache3[x,y]
+    result = 0
+    for m in range(1, y + 1):
+        result += combination(x + 1, m) * crowd(y, m)
+    cache3[x,y] = result
+    return result
 
 def answer(seq):
     # your code here
-    # parents first, children second
     bunnies = Tree()
 
     #insertion takes O(n^2)
     for num in seq:
         bunnies.insert(num)
 
-    bunnies.display()
+    bunnies.bottomup()
 
+    return str(bunnies.rootSets())
 
-
-
-
-answer([5, 9, 8, 2, 1])
-answer([5, 2, 9, 1, 8])
+print answer([5,4,6,3])
